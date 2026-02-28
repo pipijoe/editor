@@ -1,10 +1,11 @@
-import { type PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type MouseEvent, type PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin'
+import { ClickableLinkPlugin } from '@lexical/react/LexicalClickableLinkPlugin'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
   $createParagraphNode,
@@ -193,6 +194,22 @@ function FloatingSelectionToolbarPlugin() {
   const [converting, setConverting] = useState(false)
   const selectionRef = useRef<RangeSelection | null>(null)
 
+  const preventMouseDownBlur = (event: MouseEvent) => {
+    event.preventDefault()
+  }
+
+  const openLinkEditor = () => {
+    editor.getEditorState().read(() => {
+      const selection = $getSelection()
+      if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+        selectionRef.current = selection.clone()
+        setSelectedText(selection.getTextContent())
+      }
+    })
+
+    setShowLinkEditor(true)
+  }
+
   const updateSelectionState = useCallback(() => {
     const selection = $getSelection()
 
@@ -361,7 +378,15 @@ function FloatingSelectionToolbarPlugin() {
           </div>
         </div>
 
-        <Button aria-label="设置链接" size="sm" title="设置链接" variant="outline" onClick={() => setShowLinkEditor(true)} type="button">
+        <Button
+          aria-label="设置链接"
+          size="sm"
+          title="设置链接"
+          variant="outline"
+          onMouseDown={preventMouseDownBlur}
+          onClick={openLinkEditor}
+          type="button"
+        >
           <LinkIcon className="h-4 w-4" />
         </Button>
       </div>
@@ -382,6 +407,7 @@ function FloatingSelectionToolbarPlugin() {
             size="sm"
             title="取消"
             variant="outline"
+            onMouseDown={preventMouseDownBlur}
             onClick={() => {
               setShowLinkEditor(false)
               setLinkInput('')
@@ -390,7 +416,7 @@ function FloatingSelectionToolbarPlugin() {
           >
             <XIcon className="h-4 w-4" />
           </Button>
-          <Button aria-label="确认" size="sm" title="确认" onClick={submitLink} type="button" variant="outline">
+          <Button aria-label="确认" size="sm" title="确认" onMouseDown={preventMouseDownBlur} onClick={submitLink} type="button" variant="outline">
             <CheckIcon className="h-4 w-4" />
           </Button>
           <Button
@@ -398,6 +424,7 @@ function FloatingSelectionToolbarPlugin() {
             disabled={converting}
             size="sm"
             title="转化为卡片"
+            onMouseDown={preventMouseDownBlur}
             onClick={() => void convertToCard()}
             type="button"
           >
@@ -438,6 +465,7 @@ export default function App() {
           />
           <HistoryPlugin />
           <LinkPlugin />
+          <ClickableLinkPlugin newTab />
           <AutoLinkCardPlugin />
           <OnChangePlugin onChange={onChange} />
         </LexicalComposer>
