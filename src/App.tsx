@@ -8,6 +8,7 @@ import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
   $createParagraphNode,
+  $getRoot,
   $getSelection,
   $isRangeSelection,
   $setSelection,
@@ -279,33 +280,31 @@ function FloatingSelectionToolbarPlugin() {
   }
 
   const convertToCard = async () => {
-    if (!linkInput.trim()) {
+    const normalizedUrl = linkInput.trim()
+    if (!normalizedUrl) {
       return
     }
 
     setConverting(true)
     try {
-      const card = await fetchLinkCard(linkInput.trim())
+      const card = await fetchLinkCard(normalizedUrl)
       const cardTitle = selectionRef.current?.getTextContent() || selectedText || card.title
 
       editor.update(() => {
-        if (!selectionRef.current) {
+        const selection = selectionRef.current?.clone() ?? $getSelection()
+        const cardNode = $createLinkPreviewCardNode({
+          ...card,
+          title: cardTitle,
+          url: normalizedUrl,
+        })
+
+        if ($isRangeSelection(selection)) {
+          $setSelection(selection)
+          selection.insertNodes([cardNode])
           return
         }
 
-        $setSelection(selectionRef.current.clone())
-        const selection = $getSelection()
-        if (!$isRangeSelection(selection) || selection.isCollapsed()) {
-          return
-        }
-
-        selection.insertNodes([
-          $createLinkPreviewCardNode({
-            ...card,
-            title: cardTitle,
-            url: linkInput.trim(),
-          }),
-        ])
+        $getRoot().append(cardNode)
       })
 
       setShowLinkEditor(false)
