@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
@@ -6,17 +6,22 @@ import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
+  $createParagraphNode,
+  $createTextNode,
   $getSelection,
   $isRangeSelection,
+  $isTextNode,
+  $setSelection,
   FORMAT_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
   type EditorState,
+  type LexicalNode,
 } from 'lexical'
 import { $patchStyleText, $setBlocksType } from '@lexical/selection'
 import { $createHeadingNode, HeadingNode } from '@lexical/rich-text'
 
-import { LinkPreviewCardNode } from '@/nodes/LinkPreviewCardNode'
-import { AutoLinkCardPlugin } from '@/plugins/AutoLinkCardPlugin'
+import { LinkPreviewCardNode, $createLinkPreviewCardNode } from '@/nodes/LinkPreviewCardNode'
+import { AutoLinkCardPlugin, fetchLinkCard } from '@/plugins/AutoLinkCardPlugin'
 import { Button } from '@/components/ui/button'
 
 type FormatState = {
@@ -54,6 +59,8 @@ const BACKGROUND_OPTIONS = [
   { label: '浅蓝', value: '#bfdbfe' },
   { label: '浅绿', value: '#bbf7d0' },
 ]
+
+const URL_REGEX = /^https?:\/\/[^\s]+$/
 
 function ToolbarPlugin() {
   const [editor] = useLexicalComposerContext()
@@ -121,20 +128,31 @@ function ToolbarPlugin() {
 function SelectionMenuPlugin() {
   const [editor] = useLexicalComposerContext()
   const [showMenu, setShowMenu] = useState(false)
+  const [isSelectedLink, setIsSelectedLink] = useState(false)
+
+  const updateSelectionState = useCallback(() => {
+    const selection = $getSelection()
+    if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+      setShowMenu(false)
+      setIsSelectedLink(false)
+      return
+    }
+
+    const content = selection.getTextContent().trim()
+    setShowMenu(true)
+    setIsSelectedLink(URL_REGEX.test(content))
+  }, [])
 
   useEffect(() => {
     return editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
       () => {
-        editor.getEditorState().read(() => {
-          const selection = $getSelection()
-          setShowMenu($isRangeSelection(selection) && !selection.isCollapsed())
-        })
+        editor.getEditorState().read(updateSelectionState)
         return false
       },
       1,
     )
-  }, [editor])
+  }, [editor, updateSelectionState])
 
   const applyTextColor = (color: string) => {
     editor.update(() => {
@@ -160,6 +178,79 @@ function SelectionMenuPlugin() {
       if ($isRangeSelection(selection)) {
         $setBlocksType(selection, () => $createHeadingNode(tag))
       }
+    })
+  }
+
+  const applyParagraph = () => {
+    editor.update(() => {
+      const selection = $getSelection()
+      if ($isRangeSelection(selection)) {
+        $setBlocksType(selection, () => $createParagraphNode())
+      }
+    })
+  }
+
+  const convertSelectedLinkToCard = async () => {
+    const selectionText = editor.getEditorState().read(() => {
+      const selection = $getSelection()
+      if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+        return null
+      }
+
+      const text = selection.getTextContent().trim()
+      if (!URL_REGEX.test(text)) {
+        return null
+      }
+
+      return text
+    })
+
+    if (!selectionText) {
+      return
+    }
+
+    const card = await fetchLinkCard(selectionText)
+
+    editor.update(() => {
+      const selection = $getSelection()
+      if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+        return
+      }
+
+      const selectedNodes = selection.getNodes()
+      if (selectedNodes.length !== 1 || !$isTextNode(selectedNodes[0])) {
+        return
+      }
+
+      const selectedNode = selectedNodes[0]
+      const selectedText = selection.getTextContent().trim()
+      if (!URL_REGEX.test(selectedText)) {
+        return
+      }
+
+      const textContent = selectedNode.getTextContent()
+      const startOffset = Math.min(selection.anchor.offset, selection.focus.offset)
+      const endOffset = Math.max(selection.anchor.offset, selection.focus.offset)
+
+      const before = textContent.slice(0, startOffset)
+      const after = textContent.slice(endOffset)
+
+      const insertNodes: LexicalNode[] = []
+      if (before) {
+        insertNodes.push($createTextNode(before))
+      }
+      insertNodes.push($createLinkPreviewCardNode(card))
+      if (after) {
+        insertNodes.push($createTextNode(after))
+      }
+
+      selectedNode.replace(insertNodes[0])
+      let currentNode = insertNodes[0]
+      for (let i = 1; i < insertNodes.length; i += 1) {
+        currentNode.insertAfter(insertNodes[i])
+        currentNode = insertNodes[i]
+      }
+      $setSelection(null)
     })
   }
 
@@ -222,12 +313,24 @@ function SelectionMenuPlugin() {
       <Button size="sm" variant="outline" onClick={() => applyHeading('h3')} type="button">
         H3
       </Button>
+      <Button size="sm" variant="outline" onClick={applyParagraph} type="button">
+        正文
+      </Button>
+      {isSelectedLink && (
+        <Button size="sm" variant="default" onClick={() => void convertSelectedLinkToCard()} type="button">
+          链接卡片开关
+        </Button>
+      )}
     </div>
   )
 }
 
 export default function App() {
   const [content, setContent] = useState('')
+  const editorContentClasses = useMemo(
+    () => 'min-h-52 rounded-md border border-slate-200 bg-white p-3 text-slate-900 outline-none',
+    [],
+  )
 
   const onChange = (editorState: EditorState) => {
     editorState.read(() => {
@@ -246,9 +349,7 @@ export default function App() {
           <ToolbarPlugin />
           <SelectionMenuPlugin />
           <RichTextPlugin
-            contentEditable={
-              <ContentEditable className="min-h-52 rounded-md border border-slate-200 bg-white p-3 text-slate-900 outline-none" />
-            }
+            contentEditable={<ContentEditable className={editorContentClasses} />}
             placeholder={<p className="pointer-events-none -mt-9 px-3 text-slate-400">输入 URL（如 https://example.com）会自动转换成卡片...</p>}
             ErrorBoundary={({ children }) => <>{children}</>}
           />
