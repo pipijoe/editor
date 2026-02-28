@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
@@ -29,6 +29,127 @@ type SelectionPosition = {
   left: number
 }
 
+type IconProps = {
+  className?: string
+}
+
+function LucideIcon({ children, className }: PropsWithChildren<IconProps>) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {children}
+    </svg>
+  )
+}
+
+const BoldIcon = ({ className }: IconProps) => (
+  <LucideIcon className={className}>
+    <path d="M6 4h8a4 4 0 0 1 0 8H6z" />
+    <path d="M6 12h9a4 4 0 0 1 0 8H6z" />
+  </LucideIcon>
+)
+
+const ItalicIcon = ({ className }: IconProps) => (
+  <LucideIcon className={className}>
+    <line x1="19" x2="10" y1="4" y2="4" />
+    <line x1="14" x2="5" y1="20" y2="20" />
+    <line x1="15" x2="9" y1="4" y2="20" />
+  </LucideIcon>
+)
+
+const ParagraphIcon = ({ className }: IconProps) => (
+  <LucideIcon className={className}>
+    <path d="M13 4v16" />
+    <path d="M17 4v16" />
+    <path d="M19 4H9a4 4 0 0 0 0 8h4" />
+  </LucideIcon>
+)
+
+const Heading1Icon = ({ className }: IconProps) => (
+  <LucideIcon className={className}>
+    <path d="M4 12h8" />
+    <path d="M4 18V6" />
+    <path d="M12 18V6" />
+    <path d="m17 12 3-2v8" />
+  </LucideIcon>
+)
+
+const Heading2Icon = ({ className }: IconProps) => (
+  <LucideIcon className={className}>
+    <path d="M4 12h8" />
+    <path d="M4 18V6" />
+    <path d="M12 18V6" />
+    <path d="M17 13.5a2.5 2.5 0 1 0-1-4.5" />
+    <path d="M16 19h5" />
+    <path d="M21 19v-1.5a2.5 2.5 0 0 0-5 0V19" />
+  </LucideIcon>
+)
+
+const Heading3Icon = ({ className }: IconProps) => (
+  <LucideIcon className={className}>
+    <path d="M4 12h8" />
+    <path d="M4 18V6" />
+    <path d="M12 18V6" />
+    <path d="M17.5 10.5a2.5 2.5 0 1 1 3 4" />
+    <path d="M17 17a2.5 2.5 0 1 0 3.5 2" />
+  </LucideIcon>
+)
+
+const PaletteIcon = ({ className }: IconProps) => (
+  <LucideIcon className={className}>
+    <circle cx="13.5" cy="6.5" r=".5" />
+    <circle cx="17.5" cy="10.5" r=".5" />
+    <circle cx="8.5" cy="7.5" r=".5" />
+    <circle cx="6.5" cy="12.5" r=".5" />
+    <path d="M12 22a1 1 0 0 1 0-9h1a4 4 0 0 0 0-8 9 9 0 0 0 0 18Z" />
+  </LucideIcon>
+)
+
+const LinkIcon = ({ className }: IconProps) => (
+  <LucideIcon className={className}>
+    <path d="M10 13a5 5 0 0 0 7.54.54l1.92-1.92a5 5 0 0 0-7.07-7.07L10.2 6.74" />
+    <path d="M14 11a5 5 0 0 0-7.54-.54L4.54 12.38a5 5 0 0 0 7.07 7.07l2.19-2.18" />
+  </LucideIcon>
+)
+
+const XIcon = ({ className }: IconProps) => (
+  <LucideIcon className={className}>
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </LucideIcon>
+)
+
+const CheckIcon = ({ className }: IconProps) => (
+  <LucideIcon className={className}>
+    <path d="M20 6 9 17l-5-5" />
+  </LucideIcon>
+)
+
+const CardIcon = ({ className }: IconProps) => (
+  <LucideIcon className={className}>
+    <rect height="14" rx="2" width="20" x="2" y="5" />
+    <path d="M6 9h12" />
+    <path d="M6 13h6" />
+  </LucideIcon>
+)
+
+const LoaderIcon = ({ className }: IconProps) => (
+  <LucideIcon className={className}>
+    <path d="M21 12a9 9 0 1 1-6.2-8.56" />
+  </LucideIcon>
+)
+
 const initialConfig = {
   namespace: 'basic-editor',
   nodes: [HeadingNode, LinkNode, LinkPreviewCardNode],
@@ -47,10 +168,18 @@ const initialConfig = {
 }
 
 const COLOR_OPTIONS = [
-  { label: '黑色', value: '#0f172a' },
+  { label: '深灰', value: '#0f172a' },
   { label: '红色', value: '#dc2626' },
-  { label: '蓝色', value: '#2563eb' },
+  { label: '橙色', value: '#ea580c' },
+  { label: '琥珀', value: '#d97706' },
+  { label: '黄色', value: '#ca8a04' },
   { label: '绿色', value: '#16a34a' },
+  { label: '青色', value: '#0d9488' },
+  { label: '天蓝', value: '#0284c7' },
+  { label: '蓝色', value: '#2563eb' },
+  { label: '紫色', value: '#7c3aed' },
+  { label: '粉色', value: '#db2777' },
+  { label: '棕色', value: '#7c2d12' },
 ]
 
 function FloatingSelectionToolbarPlugin() {
@@ -150,13 +279,14 @@ function FloatingSelectionToolbarPlugin() {
   }
 
   const convertToCard = async () => {
-    if (!linkInput.trim() || !selectedText) {
+    if (!linkInput.trim()) {
       return
     }
 
     setConverting(true)
     try {
       const card = await fetchLinkCard(linkInput.trim())
+      const cardTitle = selectionRef.current?.getTextContent() || selectedText || card.title
 
       editor.update(() => {
         if (!selectionRef.current) {
@@ -172,7 +302,7 @@ function FloatingSelectionToolbarPlugin() {
         selection.insertNodes([
           $createLinkPreviewCardNode({
             ...card,
-            title: selectedText,
+            title: cardTitle,
             url: linkInput.trim(),
           }),
         ])
@@ -196,46 +326,44 @@ function FloatingSelectionToolbarPlugin() {
         className="fixed z-20 flex -translate-x-1/2 -translate-y-full flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white p-2 shadow-lg"
         style={{ left: selectionPosition.left, top: selectionPosition.top }}
       >
-        <Button size="sm" variant="outline" onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')} type="button">
-          加粗
+        <Button aria-label="加粗" size="sm" title="加粗" variant="outline" onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')} type="button">
+          <BoldIcon className="h-4 w-4" />
         </Button>
-        <Button size="sm" variant="outline" onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')} type="button">
-          斜体
+        <Button aria-label="斜体" size="sm" title="斜体" variant="outline" onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')} type="button">
+          <ItalicIcon className="h-4 w-4" />
         </Button>
-        <Button size="sm" variant="outline" onClick={applyParagraph} type="button">
-          正文
+        <Button aria-label="正文" size="sm" title="正文" variant="outline" onClick={applyParagraph} type="button">
+          <ParagraphIcon className="h-4 w-4" />
         </Button>
-        <Button size="sm" variant="outline" onClick={() => applyHeading('h1')} type="button">
-          标题1
+        <Button aria-label="标题 1" size="sm" title="标题 1" variant="outline" onClick={() => applyHeading('h1')} type="button">
+          <Heading1Icon className="h-4 w-4" />
         </Button>
-        <Button size="sm" variant="outline" onClick={() => applyHeading('h2')} type="button">
-          标题2
+        <Button aria-label="标题 2" size="sm" title="标题 2" variant="outline" onClick={() => applyHeading('h2')} type="button">
+          <Heading2Icon className="h-4 w-4" />
         </Button>
-        <Button size="sm" variant="outline" onClick={() => applyHeading('h3')} type="button">
-          标题3
+        <Button aria-label="标题 3" size="sm" title="标题 3" variant="outline" onClick={() => applyHeading('h3')} type="button">
+          <Heading3Icon className="h-4 w-4" />
         </Button>
 
-        <select
-          className="rounded border border-slate-300 bg-white px-2 py-1 text-sm"
-          defaultValue=""
-          onChange={(event) => {
-            if (event.target.value) {
-              applyTextColor(event.target.value)
-            }
-          }}
-        >
-          <option value="" disabled>
-            字体颜色
-          </option>
-          {COLOR_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-1" title="字体颜色">
+          <PaletteIcon className="h-4 w-4 text-slate-500" />
+          <div className="grid grid-cols-6 gap-1">
+            {COLOR_OPTIONS.map((option) => (
+              <button
+                aria-label={option.label}
+                className="h-4 w-4 rounded-full border border-slate-300"
+                key={option.value}
+                onClick={() => applyTextColor(option.value)}
+                style={{ backgroundColor: option.value }}
+                title={option.label}
+                type="button"
+              />
+            ))}
+          </div>
+        </div>
 
-        <Button size="sm" variant="outline" onClick={() => setShowLinkEditor(true)} type="button">
-          🔗
+        <Button aria-label="设置链接" size="sm" title="设置链接" variant="outline" onClick={() => setShowLinkEditor(true)} type="button">
+          <LinkIcon className="h-4 w-4" />
         </Button>
       </div>
 
@@ -251,7 +379,9 @@ function FloatingSelectionToolbarPlugin() {
             value={linkInput}
           />
           <Button
+            aria-label="取消"
             size="sm"
+            title="取消"
             variant="outline"
             onClick={() => {
               setShowLinkEditor(false)
@@ -259,13 +389,20 @@ function FloatingSelectionToolbarPlugin() {
             }}
             type="button"
           >
-            取消
+            <XIcon className="h-4 w-4" />
           </Button>
-          <Button size="sm" onClick={submitLink} type="button" variant="outline">
-            确认
+          <Button aria-label="确认" size="sm" title="确认" onClick={submitLink} type="button" variant="outline">
+            <CheckIcon className="h-4 w-4" />
           </Button>
-          <Button disabled={converting} size="sm" onClick={() => void convertToCard()} type="button">
-            {converting ? '转换中...' : '转化为卡片'}
+          <Button
+            aria-label="转化为卡片"
+            disabled={converting}
+            size="sm"
+            title="转化为卡片"
+            onClick={() => void convertToCard()}
+            type="button"
+          >
+            {converting ? <LoaderIcon className="h-4 w-4 animate-spin" /> : <CardIcon className="h-4 w-4" />}
           </Button>
         </div>
       )}
