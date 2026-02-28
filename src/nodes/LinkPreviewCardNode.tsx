@@ -26,13 +26,13 @@ type SerializedLinkPreviewCardNode = Spread<
 
 function LinkPreviewCard({ card }: { card: LinkCardData }) {
   return (
-    <article className="my-3 overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm transition-shadow hover:shadow-md">
-      {card.image && <img src={card.image} alt={card.title} className="h-36 w-full object-cover" />}
-      <div className="space-y-2 p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{card.siteName}</p>
-        <h3 className="line-clamp-2 text-base font-semibold text-slate-900">{card.title}</h3>
-        <p className="line-clamp-3 text-sm text-slate-600">{card.description}</p>
-        <a className="inline-flex text-sm font-medium text-blue-600 hover:text-blue-500" href={card.url} target="_blank" rel="noreferrer">
+    <article className="mx-auto my-3 w-full max-w-md overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm transition-shadow hover:shadow-md">
+      {card.image && <img src={card.image} alt={card.title} className="h-28 w-full object-cover" />}
+      <div className="space-y-1.5 p-3">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{card.siteName}</p>
+        <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">{card.title}</h3>
+        <p className="line-clamp-2 text-xs text-slate-600">{card.description}</p>
+        <a className="inline-flex text-xs font-medium text-blue-600 hover:text-blue-500" href={card.url} target="_blank" rel="noreferrer">
           访问链接 ↗
         </a>
       </div>

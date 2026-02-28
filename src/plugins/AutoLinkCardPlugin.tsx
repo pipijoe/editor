@@ -6,7 +6,7 @@ import { $createLinkPreviewCardNode, type LinkCardData } from '@/nodes/LinkPrevi
 
 const URL_REGEX = /https?:\/\/[^\s]+/g
 
-async function fetchLinkCard(url: string): Promise<LinkCardData> {
+export async function fetchLinkCard(url: string): Promise<LinkCardData> {
   const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`)
   if (!response.ok) {
     throw new Error('链接信息获取失败')
