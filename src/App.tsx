@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
@@ -7,6 +7,7 @@ import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
   $getSelection,
+  $getRoot,
   $isRangeSelection,
   FORMAT_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -21,6 +22,14 @@ type FormatState = {
   bold: boolean
   italic: boolean
   underline: boolean
+}
+
+type LinkCard = {
+  url: string
+  title: string
+  description: string
+  siteName: string
+  image?: string
 }
 
 const initialConfig = {
@@ -224,8 +233,15 @@ function SelectionMenuPlugin() {
   )
 }
 
+const URL_REGEX = /https?:\/\/[^\s]+/g
+
 export default function App() {
   const [content, setContent] = useState('')
+  const [detectedUrls, setDetectedUrls] = useState<string[]>([])
+  const [ignoredUrls, setIgnoredUrls] = useState<string[]>([])
+  const [cards, setCards] = useState<LinkCard[]>([])
+  const [loadingUrl, setLoadingUrl] = useState<string | null>(null)
+  const [linkError, setLinkError] = useState<string | null>(null)
 
   const onChange = (editorState: EditorState) => {
     editorState.read(() => {
@@ -233,7 +249,51 @@ export default function App() {
       if ($isRangeSelection(selection)) {
         setContent(selection.getTextContent())
       }
+
+      const fullText = $getRoot().getTextContent()
+      const urls = fullText.match(URL_REGEX) ?? []
+      setDetectedUrls(Array.from(new Set(urls)))
     })
+  }
+
+  const pendingUrl = useMemo(
+    () => detectedUrls.find((url) => !cards.some((card) => card.url === url) && !ignoredUrls.includes(url)) ?? null,
+    [cards, detectedUrls, ignoredUrls],
+  )
+
+  const dismissCurrentUrl = () => {
+    if (pendingUrl) {
+      setIgnoredUrls((previous) => [...previous, pendingUrl])
+    }
+  }
+
+  const convertToCard = async () => {
+    if (!pendingUrl) {
+      return
+    }
+
+    setLoadingUrl(pendingUrl)
+    setLinkError(null)
+
+    try {
+      const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(pendingUrl)}`)
+      if (!response.ok) {
+        throw new Error('请求失败')
+      }
+
+      const result = await response.json()
+      const title = result?.data?.title || pendingUrl
+      const description = result?.data?.description || '暂无描述'
+      const siteName = result?.data?.publisher || new URL(pendingUrl).hostname
+      const image = result?.data?.image?.url
+
+      setCards((previous) => [{ url: pendingUrl, title, description, siteName, image }, ...previous])
+    } catch {
+      setLinkError('链接信息获取失败，可能是目标站点不支持抓取。')
+    } finally {
+      setLoadingUrl(null)
+      setIgnoredUrls((previous) => [...previous, pendingUrl])
+    }
   }
 
   return (
@@ -254,9 +314,42 @@ export default function App() {
           <OnChangePlugin onChange={onChange} />
         </LexicalComposer>
 
-        <div className="mt-4 rounded-md bg-slate-50 p-3 text-sm text-slate-600">
-          当前选中文本：{content || '（暂无）'}
-        </div>
+        {pendingUrl && (
+          <div className="mt-4 rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+            <p className="mb-2">检测到链接：{pendingUrl}</p>
+            <p className="mb-3">是否将该链接转换为卡片预览？</p>
+            <div className="flex gap-2">
+              <Button type="button" size="sm" onClick={convertToCard} disabled={loadingUrl === pendingUrl}>
+                {loadingUrl === pendingUrl ? '抓取中...' : '是，转换为卡片'}
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={dismissCurrentUrl}>
+                否
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {linkError && <p className="mt-3 text-sm text-red-600">{linkError}</p>}
+
+        <div className="mt-4 rounded-md bg-slate-50 p-3 text-sm text-slate-600">当前选中文本：{content || '（暂无）'}</div>
+
+        {cards.length > 0 && (
+          <div className="mt-4 space-y-3">
+            {cards.map((card) => (
+              <article key={card.url} className="overflow-hidden rounded-md border border-slate-200">
+                {card.image && <img src={card.image} alt={card.title} className="h-40 w-full object-cover" />}
+                <div className="space-y-2 p-3">
+                  <p className="text-xs text-slate-500">{card.siteName}</p>
+                  <h2 className="text-base font-semibold text-slate-900">{card.title}</h2>
+                  <p className="text-sm text-slate-600">{card.description}</p>
+                  <a className="text-sm text-blue-600 underline" href={card.url} target="_blank" rel="noreferrer">
+                    {card.url}
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   )
