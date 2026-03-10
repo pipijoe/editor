@@ -23,7 +23,9 @@ import { $createHeadingNode, HeadingNode } from '@lexical/rich-text'
 import { LinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link'
 
 import { LinkPreviewCardNode, $createLinkPreviewCardNode } from '@/nodes/LinkPreviewCardNode'
+import { EquationNode } from '@/nodes/EquationNode'
 import { AutoLinkCardPlugin, fetchLinkCard } from '@/plugins/AutoLinkCardPlugin'
+import { ComponentPickerPlugin } from '@/plugins/ComponentPickerPlugin'
 import { Button } from '@/components/ui/button'
 
 type SelectionPosition = {
@@ -154,7 +156,7 @@ const LoaderIcon = ({ className }: IconProps) => (
 
 const initialConfig = {
   namespace: 'basic-editor',
-  nodes: [HeadingNode, LinkNode, LinkPreviewCardNode],
+  nodes: [HeadingNode, LinkNode, LinkPreviewCardNode, EquationNode],
   theme: {
     paragraph: 'mb-2',
     link: 'text-blue-600 underline',
@@ -460,13 +462,14 @@ export default function App() {
           <FloatingSelectionToolbarPlugin />
           <RichTextPlugin
             contentEditable={<ContentEditable className={editorContentClasses} />}
-            placeholder={<p className="pointer-events-none -mt-9 px-3 text-slate-400">输入 URL（如 https://example.com）会自动转换成卡片...</p>}
+            placeholder={<p className="pointer-events-none -mt-9 px-3 text-slate-400">输入 / 唤起命令菜单，选择「公式」可插入可编辑公式</p>}
             ErrorBoundary={({ children }) => <>{children}</>}
           />
           <HistoryPlugin />
           <LinkPlugin />
           <ClickableLinkPlugin newTab />
           <AutoLinkCardPlugin />
+          <ComponentPickerPlugin />
           <OnChangePlugin onChange={onChange} />
         </LexicalComposer>
 
