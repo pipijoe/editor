@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type JSX, type KeyboardEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent } from 'react'
 import {
   $getNodeByKey,
   DecoratorNode,
@@ -64,9 +64,10 @@ function loadKaTeX(): Promise<KaTeXRenderer | null> {
 }
 
 function EquationComponent({ formula, nodeKey, editor }: { formula: string; nodeKey: NodeKey; editor: LexicalEditor }) {
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(formula.trim().length === 0)
   const [value, setValue] = useState(formula)
   const [katexRenderer, setKatexRenderer] = useState<KaTeXRenderer | null>(null)
+  const wrapperRef = useRef<HTMLSpanElement | null>(null)
 
   useEffect(() => {
     let active = true
@@ -82,8 +83,35 @@ function EquationComponent({ formula, nodeKey, editor }: { formula: string; node
     }
   }, [])
 
+  useEffect(() => {
+    setValue(formula)
+    if (formula.trim().length === 0) {
+      setEditing(true)
+    }
+  }, [formula])
+
+  useEffect(() => {
+    if (!editing) {
+      return
+    }
+
+    const onClickOutside = (event: MouseEvent) => {
+      if (!wrapperRef.current) {
+        return
+      }
+
+      if (!wrapperRef.current.contains(event.target as Node)) {
+        setValue(formula)
+        setEditing(false)
+      }
+    }
+
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [editing, formula])
+
   const renderedFormula = useMemo(() => {
-    if (!katexRenderer) {
+    if (!katexRenderer || formula.trim().length === 0) {
       return null
     }
 
@@ -95,7 +123,7 @@ function EquationComponent({ formula, nodeKey, editor }: { formula: string; node
   }, [formula, katexRenderer])
 
   const saveFormula = () => {
-    const nextFormula = value.trim() || 'x^2'
+    const nextFormula = value.trim()
     editor.update(() => {
       const node = $getNodeByKey(nodeKey)
       if ($isEquationNode(node)) {
@@ -118,54 +146,59 @@ function EquationComponent({ formula, nodeKey, editor }: { formula: string; node
     }
   }
 
-  if (editing) {
-    return (
-      <span className="my-2 block rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-        <p className="mb-2 text-xs text-slate-500">编辑公式（Ctrl/Cmd + Enter 保存）</p>
-        <textarea
-          autoFocus
-          className="h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 outline-none focus:border-slate-400"
-          onChange={(event) => setValue(event.target.value)}
-          onKeyDown={onInputKeyDown}
-          value={value}
-        />
-        <div className="mt-2 flex justify-end gap-2">
-          <button
-            className="text-xs font-medium text-slate-600"
-            onClick={() => {
-              setValue(formula)
-              setEditing(false)
-            }}
-            type="button"
-          >
-            取消
-          </button>
-          <button className="text-xs font-medium text-indigo-700" onClick={saveFormula} type="button">
-            保存
-          </button>
-        </div>
-      </span>
-    )
-  }
-
   return (
-    <button
-      className="my-2 block w-full rounded-lg border border-transparent px-3 py-2 text-left hover:border-slate-200 hover:bg-slate-50"
-      onClick={() => {
-        setValue(formula)
-        setEditing(true)
-      }}
-      title="点击编辑公式"
-      type="button"
-    >
-      <span className="block overflow-x-auto rounded-md bg-slate-50 px-3 py-2 text-slate-800">
-        {renderedFormula ? (
-          <span className="flex justify-center" dangerouslySetInnerHTML={{ __html: renderedFormula }} />
-        ) : (
-          <span className="block text-center font-serif text-lg">{formula}</span>
-        )}
-      </span>
-    </button>
+    <span className="relative my-2 block w-full" ref={wrapperRef}>
+      <button
+        className={`block w-full rounded-lg border px-3 py-2 text-left transition ${
+          editing
+            ? 'border-indigo-200 bg-indigo-50/40'
+            : 'border-transparent hover:border-slate-300 hover:bg-slate-50/80 hover:shadow-sm'
+        }`}
+        onClick={() => {
+          setValue(formula)
+          setEditing(true)
+        }}
+        title="点击编辑公式"
+        type="button"
+      >
+        <span className="block overflow-x-auto rounded-md bg-slate-50 px-3 py-2 text-slate-800">
+          {renderedFormula ? (
+            <span className="flex justify-center" dangerouslySetInnerHTML={{ __html: renderedFormula }} />
+          ) : (
+            <span className="block text-center text-sm text-slate-400">点击输入公式</span>
+          )}
+        </span>
+      </button>
+
+      {editing && (
+        <span className="absolute left-1/2 top-full z-20 mt-2 block w-full max-w-xl -translate-x-1/2 rounded-lg border border-slate-200 bg-white p-3 shadow-xl">
+          <p className="mb-2 text-xs text-slate-500">编辑公式（Ctrl/Cmd + Enter 保存）</p>
+          <textarea
+            autoFocus
+            className="h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 outline-none focus:border-slate-400"
+            onChange={(event) => setValue(event.target.value)}
+            onKeyDown={onInputKeyDown}
+            placeholder="例如：\\frac{a}{b} 或 x^2+y^2=z^2"
+            value={value}
+          />
+          <div className="mt-2 flex justify-end gap-2">
+            <button
+              className="text-xs font-medium text-slate-600"
+              onClick={() => {
+                setValue(formula)
+                setEditing(false)
+              }}
+              type="button"
+            >
+              取消
+            </button>
+            <button className="text-xs font-medium text-indigo-700" onClick={saveFormula} type="button">
+              保存
+            </button>
+          </div>
+        </span>
+      )}
+    </span>
   )
 }
 
@@ -193,7 +226,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     }
   }
 
-  constructor(formula = 'x^2', key?: NodeKey) {
+  constructor(formula = '', key?: NodeKey) {
     super(key)
     this.__formula = formula
   }
