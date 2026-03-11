@@ -24,7 +24,7 @@ import { LinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link'
 
 import { LinkPreviewCardNode, $createLinkPreviewCardNode } from '@/nodes/LinkPreviewCardNode'
 import { EquationNode } from '@/nodes/EquationNode'
-import { AutoLinkCardPlugin, fetchLinkCard } from '@/plugins/AutoLinkCardPlugin'
+import { AutoLinkCardPlugin, fetchLinkCard, normalizeUrl } from '@/plugins/AutoLinkCardPlugin'
 import { ComponentPickerPlugin } from '@/plugins/ComponentPickerPlugin'
 import { Button } from '@/components/ui/button'
 
@@ -194,6 +194,7 @@ function FloatingSelectionToolbarPlugin() {
   const [linkInput, setLinkInput] = useState('')
   const [selectedText, setSelectedText] = useState('')
   const [converting, setConverting] = useState(false)
+  const [linkError, setLinkError] = useState('')
   const selectionRef = useRef<RangeSelection | null>(null)
 
   const preventMouseDownBlur = (event: MouseEvent) => {
@@ -282,7 +283,8 @@ function FloatingSelectionToolbarPlugin() {
   }
 
   const submitLink = () => {
-    if (!linkInput.trim()) {
+    const normalizedUrl = normalizeUrl(linkInput)
+    if (!normalizedUrl) {
       return
     }
 
@@ -291,20 +293,22 @@ function FloatingSelectionToolbarPlugin() {
         return
       }
       $setSelection(selectionRef.current.clone())
-      editor.dispatchCommand(TOGGLE_LINK_COMMAND, linkInput.trim())
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, normalizedUrl)
     })
 
     setShowLinkEditor(false)
     setLinkInput('')
+    setLinkError('')
   }
 
   const convertToCard = async () => {
-    const normalizedUrl = linkInput.trim()
+    const normalizedUrl = normalizeUrl(linkInput)
     if (!normalizedUrl) {
       return
     }
 
     setConverting(true)
+    setLinkError('')
     try {
       const card = await fetchLinkCard(normalizedUrl)
       const cardTitle = selectionRef.current?.getTextContent() || selectedText || card.title
@@ -329,6 +333,8 @@ function FloatingSelectionToolbarPlugin() {
       setShowLinkEditor(false)
       setShowMenu(false)
       setLinkInput('')
+    } catch (error) {
+      setLinkError(error instanceof Error ? error.message : '链接转换失败，请稍后重试')
     } finally {
       setConverting(false)
     }
@@ -394,17 +400,20 @@ function FloatingSelectionToolbarPlugin() {
       </div>
 
       {showLinkEditor && (
-        <div
-          className="fixed z-30 flex -translate-x-1/2 gap-2 rounded-md border border-slate-200 bg-white p-2 shadow-xl"
-          style={{ left: selectionPosition.left, top: selectionPosition.top + 8 }}
-        >
-          <input
+        <div className="fixed z-30 -translate-x-1/2" style={{ left: selectionPosition.left, top: selectionPosition.top + 8 }}>
+          <div className="flex gap-2 rounded-md border border-slate-200 bg-white p-2 shadow-xl">
+            <input
             className="w-72 rounded border border-slate-300 px-3 py-1.5 text-sm"
-            onChange={(event) => setLinkInput(event.target.value)}
+            onChange={(event) => {
+              setLinkInput(event.target.value)
+              if (linkError) {
+                setLinkError('')
+              }
+            }}
             placeholder="输入链接 URL"
             value={linkInput}
-          />
-          <Button
+            />
+            <Button
             aria-label="取消"
             size="sm"
             title="取消"
@@ -413,25 +422,28 @@ function FloatingSelectionToolbarPlugin() {
             onClick={() => {
               setShowLinkEditor(false)
               setLinkInput('')
+              setLinkError('')
             }}
             type="button"
           >
             <XIcon className="h-4 w-4" />
-          </Button>
-          <Button aria-label="确认" size="sm" title="确认" onMouseDown={preventMouseDownBlur} onClick={submitLink} type="button" variant="outline">
+            </Button>
+            <Button aria-label="确认" size="sm" title="确认" onMouseDown={preventMouseDownBlur} onClick={submitLink} type="button" variant="outline">
             <CheckIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            aria-label="转化为卡片"
-            disabled={converting}
-            size="sm"
-            title="转化为卡片"
-            onMouseDown={preventMouseDownBlur}
-            onClick={() => void convertToCard()}
-            type="button"
-          >
-            {converting ? <LoaderIcon className="h-4 w-4 animate-spin" /> : <CardIcon className="h-4 w-4" />}
-          </Button>
+            </Button>
+            <Button
+              aria-label="转化为卡片"
+              disabled={converting}
+              size="sm"
+              title="转化为卡片"
+              onMouseDown={preventMouseDownBlur}
+              onClick={() => void convertToCard()}
+              type="button"
+            >
+              {converting ? <LoaderIcon className="h-4 w-4 animate-spin" /> : <CardIcon className="h-4 w-4" />}
+            </Button>
+          </div>
+          {linkError && <p className="mt-1 px-1 text-xs text-red-600">{linkError}</p>}
         </div>
       )}
     </>

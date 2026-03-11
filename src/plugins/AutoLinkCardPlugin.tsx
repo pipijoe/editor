@@ -6,18 +6,36 @@ import { $createLinkPreviewCardNode, type LinkCardData } from '@/nodes/LinkPrevi
 
 const URL_REGEX = /https?:\/\/[^\s]+/g
 
+export function normalizeUrl(url: string): string {
+  const trimmed = url.trim()
+  if (!trimmed) {
+    return ''
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed
+  }
+
+  return `https://${trimmed}`
+}
+
+function cleanMatchedUrl(url: string): string {
+  return url.replace(/[),.;!?]+$/, '')
+}
+
 export async function fetchLinkCard(url: string): Promise<LinkCardData> {
-  const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`)
+  const normalizedUrl = normalizeUrl(url)
+  const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(normalizedUrl)}`)
   if (!response.ok) {
     throw new Error('链接信息获取失败')
   }
 
   const result = await response.json()
   return {
-    url,
-    title: result?.data?.title || url,
+    url: normalizedUrl,
+    title: result?.data?.title || normalizedUrl,
     description: result?.data?.description || '暂无描述',
-    siteName: result?.data?.publisher || new URL(url).hostname,
+    siteName: result?.data?.publisher || new URL(normalizedUrl).hostname,
     image: result?.data?.image?.url,
   }
 }
@@ -59,9 +77,19 @@ export function AutoLinkCardPlugin() {
         const textNodes = $getRoot().getAllTextNodes()
 
         for (const node of textNodes) {
-          const urls = node.getTextContent().match(URL_REGEX) ?? []
+          const nodeText = node.getTextContent().trim()
+          const urls = nodeText.match(URL_REGEX) ?? []
 
-          for (const url of urls) {
+          if (urls.length !== 1) {
+            continue
+          }
+
+          const cleanedUrl = cleanMatchedUrl(urls[0])
+          if (!cleanedUrl || nodeText !== cleanedUrl) {
+            continue
+          }
+
+          for (const url of [cleanedUrl]) {
             const token = `${node.getKey()}::${url}`
             if (processingRef.current.has(token)) {
               continue
