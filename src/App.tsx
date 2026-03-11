@@ -311,7 +311,7 @@ function FloatingSelectionToolbarPlugin() {
     setLinkError('')
     try {
       const card = await fetchLinkCard(normalizedUrl)
-      const cardTitle = selectionRef.current?.getTextContent() || selectedText || card.title
+      const cardTitle = selectedText || card.title
 
       editor.update(() => {
         const selection = selectionRef.current?.clone() ?? $getSelection()
