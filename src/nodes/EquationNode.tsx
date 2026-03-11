@@ -33,8 +33,8 @@ function EquationComponent({ formula, nodeKey, editor }: { formula: string; node
     setEditing(false)
   }
 
-  const onInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
+  const onInputKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
       event.preventDefault()
       saveFormula()
     }
@@ -48,25 +48,37 @@ function EquationComponent({ formula, nodeKey, editor }: { formula: string; node
 
   if (editing) {
     return (
-      <span className="my-2 inline-flex items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1">
-        <span className="text-xs text-indigo-700">公式</span>
-        <input
+      <span className="my-2 block rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+        <p className="mb-2 text-xs text-slate-500">编辑公式（Ctrl/Cmd + Enter 保存）</p>
+        <textarea
           autoFocus
-          className="w-52 rounded border border-indigo-300 bg-white px-2 py-1 text-sm text-slate-900 outline-none"
+          className="h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 outline-none focus:border-slate-400"
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={onInputKeyDown}
           value={value}
         />
-        <button className="text-xs font-medium text-indigo-700" onClick={saveFormula} type="button">
-          保存
-        </button>
+        <div className="mt-2 flex justify-end gap-2">
+          <button
+            className="text-xs font-medium text-slate-600"
+            onClick={() => {
+              setValue(formula)
+              setEditing(false)
+            }}
+            type="button"
+          >
+            取消
+          </button>
+          <button className="text-xs font-medium text-indigo-700" onClick={saveFormula} type="button">
+            保存
+          </button>
+        </div>
       </span>
     )
   }
 
   return (
     <button
-      className="my-2 inline-flex rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1 font-mono text-sm text-indigo-700"
+      className="my-2 block w-full rounded-lg border border-transparent px-3 py-2 text-left hover:border-slate-200 hover:bg-slate-50"
       onClick={() => {
         setValue(formula)
         setEditing(true)
@@ -74,7 +86,7 @@ function EquationComponent({ formula, nodeKey, editor }: { formula: string; node
       title="点击编辑公式"
       type="button"
     >
-      {`$${formula}$`}
+      <span className="block overflow-x-auto rounded-md bg-slate-50 px-3 py-2 font-serif text-lg text-slate-800">{formula}</span>
     </button>
   )
 }
