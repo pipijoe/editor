@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { LexicalTypeaheadMenuPlugin, MenuOption, useBasicTypeaheadTriggerMatch } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
@@ -6,7 +6,6 @@ import { $createParagraphNode, $insertNodes } from 'lexical'
 
 import { $createEquationNode } from '@/nodes/EquationNode'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 
 class SlashOption extends MenuOption {
   label: string
@@ -28,8 +27,6 @@ export function ComponentPickerPlugin() {
   const [queryString, setQueryString] = useState<string | null>(null)
   const [showMathDialog, setShowMathDialog] = useState(false)
   const [mathFormula, setMathFormula] = useState('x^2+y^2=z^2')
-  const [autoOpenHandled, setAutoOpenHandled] = useState(false)
-  const mathInputRef = useRef<HTMLInputElement | null>(null)
 
   const checkForSlashMatch = useBasicTypeaheadTriggerMatch('/', { minLength: 0 })
 
@@ -47,26 +44,6 @@ export function ComponentPickerPlugin() {
     return options.filter((option) => option.label.includes(queryString) || option.keywords.some((keyword) => keyword.includes(lowerQuery)))
   }, [options, queryString])
 
-  useEffect(() => {
-    if (!queryString) {
-      setAutoOpenHandled(false)
-      return
-    }
-
-    if (queryString.toLowerCase() === 'math' && !autoOpenHandled) {
-      setShowMathDialog(true)
-      setAutoOpenHandled(true)
-    }
-  }, [autoOpenHandled, queryString])
-
-  useEffect(() => {
-    if (showMathDialog) {
-      queueMicrotask(() => {
-        mathInputRef.current?.focus()
-      })
-    }
-  }, [showMathDialog])
-
   const insertMathNode = () => {
     const formula = mathFormula.trim() || 'x^2'
     editor.update(() => {
@@ -75,7 +52,6 @@ export function ComponentPickerPlugin() {
     })
     setShowMathDialog(false)
     setQueryString(null)
-    setAutoOpenHandled(false)
   }
 
   return (
@@ -127,24 +103,24 @@ export function ComponentPickerPlugin() {
           <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
             <h3 className="text-base font-semibold text-slate-900">插入公式</h3>
             <p className="mt-1 text-sm text-slate-500">输入 LaTeX 或普通表达式，确认后将插入公式块。</p>
-            <Input
-              className="mt-3"
+            <textarea
+              autoFocus
+              className="mt-3 h-28 w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 outline-none focus:border-slate-400"
               onChange={(event) => setMathFormula(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === 'Enter') {
+                if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
                   event.preventDefault()
                   insertMathNode()
                 }
               }}
               placeholder="例如：\\frac{a}{b} 或 x^2+y^2=z^2"
-              ref={mathInputRef}
               value={mathFormula}
             />
             <div className="mt-4 flex justify-end gap-2">
               <Button
                 onClick={() => {
                   setShowMathDialog(false)
-                  setAutoOpenHandled(false)
+                  setQueryString(null)
                 }}
                 type="button"
                 variant="outline"
