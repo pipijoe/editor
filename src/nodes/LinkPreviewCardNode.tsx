@@ -48,7 +48,7 @@ export class LinkPreviewCardNode extends DecoratorNode<JSX.Element> {
   }
 
   static clone(node: LinkPreviewCardNode): LinkPreviewCardNode {
-    return new LinkPreviewCardNode(node.__card, node.__key)
+    return new LinkPreviewCardNode(node.getCard(), node.__key)
   }
 
   static importJSON(serializedNode: SerializedLinkPreviewCardNode): LinkPreviewCardNode {
@@ -58,7 +58,7 @@ export class LinkPreviewCardNode extends DecoratorNode<JSX.Element> {
   exportJSON(): SerializedLinkPreviewCardNode {
     return {
       ...super.exportJSON(),
-      card: this.__card,
+      card: this.getCard(),
       type: 'link-preview-card',
       version: 1,
     }
@@ -78,8 +78,12 @@ export class LinkPreviewCardNode extends DecoratorNode<JSX.Element> {
     return false
   }
 
+  getCard(): LinkCardData {
+    return this.getLatest().__card
+  }
+
   decorate(): JSX.Element {
-    return <LinkPreviewCard card={this.__card} />
+    return <LinkPreviewCard card={this.getCard()} />
   }
 }
 
