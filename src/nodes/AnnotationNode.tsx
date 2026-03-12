@@ -46,18 +46,35 @@ function AnnotationComponent({
     })
   }
 
+  const updateContent = (content: string) => {
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey)
+      if ($isAnnotationNode(node)) {
+        node.setContent(content)
+      }
+    })
+  }
+
   return (
-    <span className="my-2 block rounded-xl bg-amber-100 px-4 py-3 text-amber-900">
+    <span className="my-2 block rounded-xl bg-slate-100 px-4 py-3 text-slate-800">
       <button
         aria-label="切换标注 emoji"
-        className="mr-2 inline-flex h-7 w-7 items-center justify-center rounded-md text-lg transition hover:bg-amber-200"
+        className="mr-2 inline-flex h-7 w-7 items-center justify-center rounded-md text-lg transition hover:bg-slate-200"
         onClick={cycleEmoji}
         title="点击切换 emoji"
         type="button"
       >
         {normalizedEmoji}
       </button>
-      <span className="align-middle">{content}</span>
+      <span
+        className="inline-block min-w-[120px] align-middle outline-none"
+        contentEditable
+        onBlur={(event) => updateContent(event.currentTarget.textContent ?? '')}
+        onInput={(event) => updateContent(event.currentTarget.textContent ?? '')}
+        suppressContentEditableWarning
+      >
+        {content}
+      </span>
     </span>
   )
 }
@@ -88,7 +105,7 @@ export class AnnotationNode extends DecoratorNode<JSX.Element> {
     }
   }
 
-  constructor(content = '醒目标注内容', emoji = '💡', key?: NodeKey) {
+  constructor(content = '', emoji = '💡', key?: NodeKey) {
     super(key)
     this.__content = content
     this.__emoji = emoji
@@ -105,6 +122,11 @@ export class AnnotationNode extends DecoratorNode<JSX.Element> {
   setEmoji(emoji: string): void {
     const writable = this.getWritable()
     writable.__emoji = emoji
+  }
+
+  setContent(content: string): void {
+    const writable = this.getWritable()
+    writable.__content = content
   }
 
   decorate(editor: LexicalEditor): JSX.Element {

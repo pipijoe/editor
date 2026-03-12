@@ -34,7 +34,7 @@ export function ComponentPickerPlugin() {
   const options = useMemo(
     () => [
       new SlashOption('公式', '插入可编辑公式块（支持 /math）', ['equation', 'math', 'latex', '公式'], 'math'),
-      new SlashOption('标注', '插入醒目标注文字（支持 /highlight）', ['highlight', 'mark', 'note', '标注', '高亮'], 'highlight'),
+      new SlashOption('标注', '插入可编辑标注块（支持 /highlight）', ['highlight', 'mark', 'note', '标注', '高亮'], 'highlight'),
     ],
     [],
   )
@@ -58,7 +58,7 @@ export function ComponentPickerPlugin() {
 
   const insertHighlightText = () => {
     editor.update(() => {
-      const annotationNode = $createAnnotationNode('醒目标注内容', '💡')
+      const annotationNode = $createAnnotationNode('', '💡')
       $insertNodes([annotationNode, $createParagraphNode()])
     })
     setQueryString(null)
@@ -115,8 +115,8 @@ export function ComponentPickerPlugin() {
               {hoveredCommand === 'highlight' && (
                 <div className="w-[200px] max-w-[40vw] rounded-md border border-slate-200 bg-white p-3 shadow-lg">
                   <p className="mb-2 text-xs font-medium text-slate-500">页面效果预览</p>
-                  <p className="rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-900">
-                    <span className="mr-1">💡</span> 醒目标注内容
+                  <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-800">
+                    <span className="mr-1">💡</span> 点击后输入内容
                   </p>
                 </div>
               )}
