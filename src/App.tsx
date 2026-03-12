@@ -24,6 +24,7 @@ import { LinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link'
 
 import { LinkPreviewCardNode, $createLinkPreviewCardNode } from '@/nodes/LinkPreviewCardNode'
 import { EquationNode } from '@/nodes/EquationNode'
+import { AnnotationNode } from '@/nodes/AnnotationNode'
 import { AutoLinkCardPlugin, fetchLinkCard, normalizeUrl } from '@/plugins/AutoLinkCardPlugin'
 import { ComponentPickerPlugin } from '@/plugins/ComponentPickerPlugin'
 import { Button } from '@/components/ui/button'
@@ -156,7 +157,7 @@ const LoaderIcon = ({ className }: IconProps) => (
 
 const initialConfig = {
   namespace: 'basic-editor',
-  nodes: [HeadingNode, LinkNode, LinkPreviewCardNode, EquationNode],
+  nodes: [HeadingNode, LinkNode, LinkPreviewCardNode, EquationNode, AnnotationNode],
   theme: {
     paragraph: 'mb-2',
     link: 'text-blue-600 underline',
