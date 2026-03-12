@@ -92,8 +92,8 @@ export function ComponentPickerPlugin() {
           }
 
           return createPortal(
-            <div className="z-30 mt-1 flex items-start gap-2">
-              <div className="w-72 rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+            <div className="z-30 mt-1 flex max-w-[92vw] items-start gap-2">
+              <div className="w-[26rem] max-w-[92vw] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
               {filteredOptions.map((option, index) => (
                 <button
                   className={`flex w-full flex-col items-start rounded px-3 py-2 text-left ${index === selectedIndex ? 'bg-slate-100' : ''}`}
@@ -113,7 +113,7 @@ export function ComponentPickerPlugin() {
               </div>
 
               {hoveredCommand === 'highlight' && (
-                <div className="w-60 rounded-md border border-slate-200 bg-white p-3 shadow-lg">
+                <div className="w-72 max-w-[40vw] rounded-md border border-slate-200 bg-white p-3 shadow-lg">
                   <p className="mb-2 text-xs font-medium text-slate-500">页面效果预览</p>
                   <p className="text-sm text-slate-700">
                     这是 <span className="rounded bg-yellow-200 px-1 text-amber-900">醒目标注内容</span> 的展示样式
