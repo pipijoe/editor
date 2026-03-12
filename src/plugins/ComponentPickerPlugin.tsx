@@ -2,17 +2,19 @@ import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { LexicalTypeaheadMenuPlugin, MenuOption, useBasicTypeaheadTriggerMatch } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $createParagraphNode, $insertNodes } from 'lexical'
+import { $createParagraphNode, $createTextNode, $insertNodes } from 'lexical'
 
 import { $createEquationNode } from '@/nodes/EquationNode'
+
+type SlashCommand = 'math' | 'highlight'
 
 class SlashOption extends MenuOption {
   label: string
   keywords: Array<string>
   description: string
-  command: 'math'
+  command: SlashCommand
 
-  constructor(label: string, description: string, keywords: Array<string>, command: 'math') {
+  constructor(label: string, description: string, keywords: Array<string>, command: SlashCommand) {
     super(command)
     this.label = label
     this.description = description
@@ -24,11 +26,15 @@ class SlashOption extends MenuOption {
 export function ComponentPickerPlugin() {
   const [editor] = useLexicalComposerContext()
   const [queryString, setQueryString] = useState<string | null>(null)
+  const [hoveredCommand, setHoveredCommand] = useState<SlashCommand | null>(null)
 
   const checkForSlashMatch = useBasicTypeaheadTriggerMatch('/', { minLength: 0 })
 
   const options = useMemo(
-    () => [new SlashOption('公式', '插入可编辑公式块（支持 /math）', ['equation', 'math', 'latex', '公式'], 'math')],
+    () => [
+      new SlashOption('公式', '插入可编辑公式块（支持 /math）', ['equation', 'math', 'latex', '公式'], 'math'),
+      new SlashOption('标注', '插入醒目标注文字（支持 /highlight）', ['highlight', 'mark', 'note', '标注', '高亮'], 'highlight'),
+    ],
     [],
   )
 
@@ -49,6 +55,15 @@ export function ComponentPickerPlugin() {
     setQueryString(null)
   }
 
+  const insertHighlightText = () => {
+    editor.update(() => {
+      const highlightText = $createTextNode('醒目标注内容')
+      highlightText.setStyle('background-color: #fef08a; color: #854d0e; border-radius: 0.25rem; padding: 0 0.2em;')
+      $insertNodes([highlightText, $createTextNode(' ')])
+    })
+    setQueryString(null)
+  }
+
   return (
     <>
       <LexicalTypeaheadMenuPlugin
@@ -64,6 +79,10 @@ export function ComponentPickerPlugin() {
             insertMathNode()
           }
 
+          if (selectedOption.command === 'highlight') {
+            insertHighlightText()
+          }
+
           closeMenu()
         }}
         options={filteredOptions}
@@ -73,19 +92,34 @@ export function ComponentPickerPlugin() {
           }
 
           return createPortal(
-            <div className="z-30 mt-1 w-72 rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+            <div className="z-30 mt-1 flex items-start gap-2">
+              <div className="w-72 rounded-md border border-slate-200 bg-white p-1 shadow-lg">
               {filteredOptions.map((option, index) => (
                 <button
                   className={`flex w-full flex-col items-start rounded px-3 py-2 text-left ${index === selectedIndex ? 'bg-slate-100' : ''}`}
                   key={option.key}
                   onClick={() => selectOptionAndCleanUp(option)}
-                  onMouseEnter={() => setHighlightedIndex(index)}
+                  onMouseEnter={() => {
+                    setHighlightedIndex(index)
+                    setHoveredCommand(option.command)
+                  }}
+                  onMouseLeave={() => setHoveredCommand((prev) => (prev === option.command ? null : prev))}
                   type="button"
                 >
                   <span className="text-sm font-medium text-slate-900">{option.label}</span>
                   <span className="text-xs text-slate-500">{option.description}</span>
                 </button>
               ))}
+              </div>
+
+              {hoveredCommand === 'highlight' && (
+                <div className="w-60 rounded-md border border-slate-200 bg-white p-3 shadow-lg">
+                  <p className="mb-2 text-xs font-medium text-slate-500">页面效果预览</p>
+                  <p className="text-sm text-slate-700">
+                    这是 <span className="rounded bg-yellow-200 px-1 text-amber-900">醒目标注内容</span> 的展示样式
+                  </p>
+                </div>
+              )}
             </div>,
             anchorElementRef.current,
           )
