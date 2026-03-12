@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { LexicalTypeaheadMenuPlugin, MenuOption, useBasicTypeaheadTriggerMatch } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $createParagraphNode, $createTextNode, $insertNodes } from 'lexical'
+import { $createParagraphNode, $insertNodes } from 'lexical'
 
+import { $createAnnotationNode } from '@/nodes/AnnotationNode'
 import { $createEquationNode } from '@/nodes/EquationNode'
 
 type SlashCommand = 'math' | 'highlight'
@@ -57,9 +58,8 @@ export function ComponentPickerPlugin() {
 
   const insertHighlightText = () => {
     editor.update(() => {
-      const highlightText = $createTextNode('醒目标注内容')
-      highlightText.setStyle('background-color: #fef08a; color: #854d0e; border-radius: 0.25rem; padding: 0 0.2em;')
-      $insertNodes([highlightText, $createTextNode(' ')])
+      const annotationNode = $createAnnotationNode('醒目标注内容', '💡')
+      $insertNodes([annotationNode, $createParagraphNode()])
     })
     setQueryString(null)
   }
@@ -93,30 +93,30 @@ export function ComponentPickerPlugin() {
 
           return createPortal(
             <div className="z-30 mt-1 flex max-w-[92vw] items-start gap-2">
-              <div className="w-[26rem] max-w-[92vw] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
-              {filteredOptions.map((option, index) => (
-                <button
-                  className={`flex w-full flex-col items-start rounded px-3 py-2 text-left ${index === selectedIndex ? 'bg-slate-100' : ''}`}
-                  key={option.key}
-                  onClick={() => selectOptionAndCleanUp(option)}
-                  onMouseEnter={() => {
-                    setHighlightedIndex(index)
-                    setHoveredCommand(option.command)
-                  }}
-                  onMouseLeave={() => setHoveredCommand((prev) => (prev === option.command ? null : prev))}
-                  type="button"
-                >
-                  <span className="text-sm font-medium text-slate-900">{option.label}</span>
-                  <span className="text-xs text-slate-500">{option.description}</span>
-                </button>
-              ))}
+              <div className="w-[300px] max-w-[92vw] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+                {filteredOptions.map((option, index) => (
+                  <button
+                    className={`flex w-full flex-col items-start rounded px-3 py-2 text-left ${index === selectedIndex ? 'bg-slate-100' : ''}`}
+                    key={option.key}
+                    onClick={() => selectOptionAndCleanUp(option)}
+                    onMouseEnter={() => {
+                      setHighlightedIndex(index)
+                      setHoveredCommand(option.command)
+                    }}
+                    onMouseLeave={() => setHoveredCommand((prev) => (prev === option.command ? null : prev))}
+                    type="button"
+                  >
+                    <span className="text-sm font-medium text-slate-900">{option.label}</span>
+                    <span className="text-xs text-slate-500">{option.description}</span>
+                  </button>
+                ))}
               </div>
 
               {hoveredCommand === 'highlight' && (
-                <div className="w-72 max-w-[40vw] rounded-md border border-slate-200 bg-white p-3 shadow-lg">
+                <div className="w-[200px] max-w-[40vw] rounded-md border border-slate-200 bg-white p-3 shadow-lg">
                   <p className="mb-2 text-xs font-medium text-slate-500">页面效果预览</p>
-                  <p className="text-sm text-slate-700">
-                    这是 <span className="rounded bg-yellow-200 px-1 text-amber-900">醒目标注内容</span> 的展示样式
+                  <p className="rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-900">
+                    <span className="mr-1">💡</span> 醒目标注内容
                   </p>
                 </div>
               )}
