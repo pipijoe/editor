@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, type JSX } from 'react'
 import {
+  $createParagraphNode,
   $getNodeByKey,
+  $isParagraphNode,
   DecoratorNode,
   type LexicalEditor,
   type LexicalNode,
@@ -78,6 +80,53 @@ function AnnotationComponent({
     })
   }
 
+  const getCurrentLineText = (element: HTMLSpanElement): string => {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) {
+      return element.textContent ?? ''
+    }
+
+    const range = selection.getRangeAt(0)
+    if (!element.contains(range.startContainer)) {
+      return element.textContent ?? ''
+    }
+
+    const beforeRange = document.createRange()
+    beforeRange.selectNodeContents(element)
+    beforeRange.setEnd(range.startContainer, range.startOffset)
+    const beforeText = beforeRange.toString()
+
+    const afterRange = document.createRange()
+    afterRange.selectNodeContents(element)
+    afterRange.setStart(range.startContainer, range.startOffset)
+    const afterText = afterRange.toString()
+
+    const beforeLines = beforeText.split('\n')
+    const beforeLine = beforeLines[beforeLines.length - 1] ?? ''
+    const afterLine = afterText.split('\n')[0] ?? ''
+
+    return `${beforeLine}${afterLine}`.trim()
+  }
+
+  const moveCursorBelowAnnotation = () => {
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey)
+      if (!$isAnnotationNode(node)) {
+        return
+      }
+
+      const nextSibling = node.getNextSibling()
+      if ($isParagraphNode(nextSibling)) {
+        nextSibling.selectStart()
+        return
+      }
+
+      const paragraphNode = $createParagraphNode()
+      node.insertAfter(paragraphNode)
+      paragraphNode.selectStart()
+    })
+  }
+
   useEffect(() => {
     if (!autoFocus) {
       return
@@ -127,7 +176,16 @@ function AnnotationComponent({
           }
 
           event.preventDefault()
-          document.execCommand('insertLineBreak')
+          const element = event.currentTarget
+          const currentLineText = getCurrentLineText(element)
+
+          if (currentLineText.length > 0) {
+            document.execCommand('insertLineBreak')
+            return
+          }
+
+          updateContent(element.textContent ?? '')
+          moveCursorBelowAnnotation()
         }}
         onMouseDown={(event) => event.stopPropagation()}
         ref={contentRef}

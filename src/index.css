@@ -5,3 +5,16 @@
 body {
   @apply text-slate-900 antialiased;
 }
+
+.editor-content [data-block-placeholder='true'] {
+  position: relative;
+}
+
+.editor-content [data-block-placeholder='true']::before {
+  content: '输入 / 启用命令';
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: rgb(148 163 184);
+}
