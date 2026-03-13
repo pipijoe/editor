@@ -7,7 +7,7 @@ import { $createParagraphNode, $insertNodes } from 'lexical'
 import { $createAnnotationNode } from '@/nodes/AnnotationNode'
 import { $createEquationNode } from '@/nodes/EquationNode'
 
-type SlashCommand = 'math' | 'highlight'
+type SlashCommand = 'math' | 'annotation'
 
 class SlashOption extends MenuOption {
   label: string
@@ -34,7 +34,7 @@ export function ComponentPickerPlugin() {
   const options = useMemo(
     () => [
       new SlashOption('公式', '插入可编辑公式块（支持 /math）', ['equation', 'math', 'latex', '公式'], 'math'),
-      new SlashOption('标注', '插入可编辑标注块（支持 /highlight）', ['highlight', 'mark', 'note', '标注', '高亮'], 'highlight'),
+      new SlashOption('标注', '插入可编辑标注块（支持 /annotation）', ['annotation', 'highlight', 'mark', 'note', '标注', '高亮'], 'annotation'),
     ],
     [],
   )
@@ -56,7 +56,7 @@ export function ComponentPickerPlugin() {
     setQueryString(null)
   }
 
-  const insertHighlightText = () => {
+  const insertAnnotationBlock = () => {
     editor.update(() => {
       const annotationNode = $createAnnotationNode('', '💡', true)
       $insertNodes([annotationNode, $createParagraphNode()])
@@ -79,8 +79,8 @@ export function ComponentPickerPlugin() {
             insertMathNode()
           }
 
-          if (selectedOption.command === 'highlight') {
-            insertHighlightText()
+          if (selectedOption.command === 'annotation') {
+            insertAnnotationBlock()
           }
 
           closeMenu()
@@ -112,11 +112,11 @@ export function ComponentPickerPlugin() {
                 ))}
               </div>
 
-              {hoveredCommand === 'highlight' && (
+              {hoveredCommand === 'annotation' && (
                 <div className="w-[200px] max-w-[40vw] rounded-md border border-slate-200 bg-white p-3 shadow-lg">
                   <p className="mb-2 text-xs font-medium text-slate-500">页面效果预览</p>
                   <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-800">
-                    <span className="mr-1">💡</span> 点击后输入内容
+                    <span className="mr-1">💡</span> 点击 emoji 可切换标注图标
                   </p>
                 </div>
               )}
