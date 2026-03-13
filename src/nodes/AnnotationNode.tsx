@@ -41,6 +41,18 @@ function AnnotationComponent({
   const containerRef = useRef<HTMLDivElement>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
 
+  useEffect(() => {
+    const element = contentRef.current
+    if (!element) {
+      return
+    }
+
+    // Keep contentEditable text in sync without letting React control caret position.
+    if (element.textContent !== content) {
+      element.textContent = content
+    }
+  }, [content])
+
   const focusContent = () => {
     const element = contentRef.current
     if (!element) {
@@ -120,6 +132,38 @@ function AnnotationComponent({
 
       const paragraphNode = $createParagraphNode()
       node.insertAfter(paragraphNode)
+      paragraphNode.selectStart()
+    })
+  }
+
+  const removeAnnotation = () => {
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey)
+      if (!$isAnnotationNode(node)) {
+        return
+      }
+
+      const nextSibling = node.getNextSibling()
+      const previousSibling = node.getPreviousSibling()
+      node.remove()
+
+      if ($isParagraphNode(nextSibling)) {
+        nextSibling.selectStart()
+        return
+      }
+
+      if ($isParagraphNode(previousSibling)) {
+        previousSibling.selectEnd()
+        return
+      }
+
+      const paragraphNode = $createParagraphNode()
+      if (nextSibling) {
+        nextSibling.insertBefore(paragraphNode)
+      } else if (previousSibling) {
+        previousSibling.insertAfter(paragraphNode)
+      }
+
       paragraphNode.selectStart()
     })
   }
@@ -215,6 +259,12 @@ function AnnotationComponent({
         onKeyDown={(event) => {
           event.stopPropagation()
 
+          if ((event.key === 'Backspace' || event.key === 'Delete') && (event.currentTarget.textContent ?? '').trim().length === 0) {
+            event.preventDefault()
+            removeAnnotation()
+            return
+          }
+
           if (event.key !== 'Enter') {
             return
           }
@@ -234,9 +284,7 @@ function AnnotationComponent({
         onMouseDown={(event) => event.stopPropagation()}
         ref={contentRef}
         suppressContentEditableWarning
-      >
-        {content}
-      </span>
+      />
     </div>
   )
 }
