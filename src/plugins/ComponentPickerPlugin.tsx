@@ -169,7 +169,15 @@ export function ComponentPickerPlugin() {
                   <button
                     className={`flex w-full flex-col items-start rounded px-3 py-2 text-left ${index === selectedIndex ? 'bg-slate-100' : ''}`}
                     key={option.key}
-                    onClick={() => selectOptionAndCleanUp(option)}
+                    onClick={() => {
+                      if (option.command === 'connect-note') {
+                        setHighlightedIndex(index)
+                        setHoveredCommand('connect-note')
+                        return
+                      }
+
+                      selectOptionAndCleanUp(option)
+                    }}
                     onMouseEnter={() => {
                       setHighlightedIndex(index)
                       setHoveredCommand(option.command)
