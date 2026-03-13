@@ -58,7 +58,7 @@ export function ComponentPickerPlugin() {
 
   const insertHighlightText = () => {
     editor.update(() => {
-      const annotationNode = $createAnnotationNode('', '💡')
+      const annotationNode = $createAnnotationNode('', '💡', true)
       $insertNodes([annotationNode, $createParagraphNode()])
     })
     setQueryString(null)
