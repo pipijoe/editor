@@ -451,10 +451,48 @@ function FloatingSelectionToolbarPlugin() {
   )
 }
 
+
+function BlockPlaceholderPlugin() {
+  const [editor] = useLexicalComposerContext()
+  const activePlaceholderKeyRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        if (activePlaceholderKeyRef.current) {
+          const previousElement = editor.getElementByKey(activePlaceholderKeyRef.current)
+          previousElement?.removeAttribute('data-block-placeholder')
+          activePlaceholderKeyRef.current = null
+        }
+
+        const selection = $getSelection()
+        if (!$isRangeSelection(selection)) {
+          return
+        }
+
+        const currentBlock = selection.anchor.getNode().getTopLevelElementOrThrow()
+        if (currentBlock.getTextContent().trim().length > 0) {
+          return
+        }
+
+        const blockElement = editor.getElementByKey(currentBlock.getKey())
+        if (!blockElement) {
+          return
+        }
+
+        blockElement.setAttribute('data-block-placeholder', 'true')
+        activePlaceholderKeyRef.current = currentBlock.getKey()
+      })
+    })
+  }, [editor])
+
+  return null
+}
+
 export default function App() {
   const [content, setContent] = useState('')
   const editorContentClasses = useMemo(
-    () => 'min-h-52 rounded-md border border-slate-200 bg-white p-3 text-slate-900 outline-none',
+    () => 'editor-content min-h-52 rounded-md border border-slate-200 bg-white p-3 text-slate-900 outline-none',
     [],
   )
 
@@ -473,9 +511,10 @@ export default function App() {
         <h1 className="mb-4 text-xl font-semibold text-slate-900">Lexical 基础编辑器</h1>
         <LexicalComposer initialConfig={initialConfig}>
           <FloatingSelectionToolbarPlugin />
+          <BlockPlaceholderPlugin />
           <RichTextPlugin
             contentEditable={<ContentEditable className={editorContentClasses} />}
-            placeholder={<p className="pointer-events-none -mt-9 px-3 text-slate-400">输入 / 唤起命令菜单，选择「公式」可插入可编辑公式</p>}
+            placeholder={<p className="pointer-events-none -mt-9 px-3 text-slate-400">输入 / 启用命令</p>}
             ErrorBoundary={({ children }) => <>{children}</>}
           />
           <HistoryPlugin />
