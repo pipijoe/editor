@@ -1,4 +1,4 @@
-import { useMemo, useRef, type JSX } from 'react'
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react'
 import {
   $getNodeByKey,
   DecoratorNode,
@@ -22,11 +22,13 @@ type SerializedAnnotationNode = Spread<
 >
 
 function AnnotationComponent({
+  autoFocus,
   content,
   editor,
   emoji,
   nodeKey,
 }: {
+  autoFocus: boolean
   content: string
   editor: LexicalEditor
   emoji: string
@@ -34,6 +36,11 @@ function AnnotationComponent({
 }) {
   const normalizedEmoji = useMemo(() => (EMOJI_OPTIONS.includes(emoji) ? emoji : '💡'), [emoji])
   const contentRef = useRef<HTMLSpanElement>(null)
+  const [draftContent, setDraftContent] = useState(content)
+
+  useEffect(() => {
+    setDraftContent(content)
+  }, [content])
 
   const focusContent = () => {
     const element = contentRef.current
@@ -76,6 +83,24 @@ function AnnotationComponent({
     })
   }
 
+  useEffect(() => {
+    if (!autoFocus) {
+      return
+    }
+
+    const rafId = window.requestAnimationFrame(() => {
+      focusContent()
+      editor.update(() => {
+        const node = $getNodeByKey(nodeKey)
+        if ($isAnnotationNode(node)) {
+          node.setAutoFocus(false)
+        }
+      })
+    })
+
+    return () => window.cancelAnimationFrame(rafId)
+  }, [autoFocus, editor, nodeKey])
+
   return (
     <span
       className="my-2 block rounded-[2px] border-[0.5px] border-slate-200 bg-slate-100 px-4 py-3 text-slate-800"
@@ -99,12 +124,12 @@ function AnnotationComponent({
         className="inline-block min-w-[120px] align-middle outline-none"
         contentEditable
         onBlur={(event) => updateContent(event.currentTarget.textContent ?? '')}
-        onInput={(event) => updateContent(event.currentTarget.textContent ?? '')}
+        onInput={(event) => setDraftContent(event.currentTarget.textContent ?? '')}
         onMouseDown={(event) => event.stopPropagation()}
         ref={contentRef}
         suppressContentEditableWarning
       >
-        {content}
+        {draftContent}
       </span>
     </span>
   )
@@ -113,13 +138,14 @@ function AnnotationComponent({
 export class AnnotationNode extends DecoratorNode<JSX.Element> {
   __content: string
   __emoji: string
+  __autoFocus: boolean
 
   static getType(): string {
     return 'annotation'
   }
 
   static clone(node: AnnotationNode): AnnotationNode {
-    return new AnnotationNode(node.__content, node.__emoji, node.__key)
+    return new AnnotationNode(node.__content, node.__emoji, node.__autoFocus, node.__key)
   }
 
   static importJSON(serializedNode: SerializedAnnotationNode): AnnotationNode {
@@ -136,10 +162,11 @@ export class AnnotationNode extends DecoratorNode<JSX.Element> {
     }
   }
 
-  constructor(content = '', emoji = '💡', key?: NodeKey) {
+  constructor(content = '', emoji = '💡', autoFocus = false, key?: NodeKey) {
     super(key)
     this.__content = content
     this.__emoji = emoji
+    this.__autoFocus = autoFocus
   }
 
   createDOM(): HTMLElement {
@@ -160,13 +187,26 @@ export class AnnotationNode extends DecoratorNode<JSX.Element> {
     writable.__content = content
   }
 
+  setAutoFocus(autoFocus: boolean): void {
+    const writable = this.getWritable()
+    writable.__autoFocus = autoFocus
+  }
+
   decorate(editor: LexicalEditor): JSX.Element {
-    return <AnnotationComponent content={this.__content} editor={editor} emoji={this.__emoji} nodeKey={this.getKey()} />
+    return (
+      <AnnotationComponent
+        autoFocus={this.__autoFocus}
+        content={this.__content}
+        editor={editor}
+        emoji={this.__emoji}
+        nodeKey={this.getKey()}
+      />
+    )
   }
 }
 
-export function $createAnnotationNode(content?: string, emoji?: string): AnnotationNode {
-  return new AnnotationNode(content, emoji)
+export function $createAnnotationNode(content?: string, emoji?: string, autoFocus?: boolean): AnnotationNode {
+  return new AnnotationNode(content, emoji, autoFocus)
 }
 
 export function $isAnnotationNode(node: LexicalNode | null | undefined): node is AnnotationNode {
