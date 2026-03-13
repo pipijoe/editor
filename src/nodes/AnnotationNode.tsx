@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type JSX } from 'react'
+import { useEffect, useMemo, useRef, type JSX } from 'react'
 import {
   $getNodeByKey,
   DecoratorNode,
@@ -36,11 +36,6 @@ function AnnotationComponent({
 }) {
   const normalizedEmoji = useMemo(() => (EMOJI_OPTIONS.includes(emoji) ? emoji : '💡'), [emoji])
   const contentRef = useRef<HTMLSpanElement>(null)
-  const [draftContent, setDraftContent] = useState(content)
-
-  useEffect(() => {
-    setDraftContent(content)
-  }, [content])
 
   const focusContent = () => {
     const element = contentRef.current
@@ -124,12 +119,11 @@ function AnnotationComponent({
         className="inline-block min-w-[120px] align-middle outline-none"
         contentEditable
         onBlur={(event) => updateContent(event.currentTarget.textContent ?? '')}
-        onInput={(event) => setDraftContent(event.currentTarget.textContent ?? '')}
         onMouseDown={(event) => event.stopPropagation()}
         ref={contentRef}
         suppressContentEditableWarning
       >
-        {draftContent}
+        {content}
       </span>
     </span>
   )
