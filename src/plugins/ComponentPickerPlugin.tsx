@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { LexicalTypeaheadMenuPlugin, MenuOption, useBasicTypeaheadTriggerMatch } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
@@ -95,6 +95,8 @@ export function ComponentPickerPlugin() {
     [],
   )
 
+  const connectNoteOption = useMemo(() => options.find((option) => option.command === 'connect-note') as SlashOption, [options])
+
   const matchedNotes = useMemo(() => {
     const normalizedQuery = noteQuery.trim().toLowerCase()
     return MOCK_NOTES.slice()
@@ -184,7 +186,8 @@ export function ComponentPickerPlugin() {
 
           return createPortal(
             <div className="z-30 mt-1 flex max-w-[96vw] items-start gap-2">
-              <div className="w-[640px] min-w-[640px] max-w-[96vw] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+              {openedPanelCommand !== 'connect-note' && (
+                <div className="w-[640px] min-w-[640px] max-w-[96vw] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
                 {filteredOptions.map((option, index) => (
                   <button
                     className={`flex w-full flex-col items-start rounded px-3 py-2 text-left ${index === selectedIndex ? 'bg-slate-100' : ''}`}
@@ -213,7 +216,8 @@ export function ComponentPickerPlugin() {
                     <span className="text-xs text-slate-500">{option.description}</span>
                   </button>
                 ))}
-              </div>
+                </div>
+              )}
 
               {hoveredCommand === 'annotation' && (
                 <div className="w-[200px] max-w-[40vw] rounded-md border border-slate-200 bg-white p-3 shadow-lg">
@@ -230,6 +234,13 @@ export function ComponentPickerPlugin() {
                   <input
                     className="mb-2 w-full rounded-md border border-slate-200 px-2 py-1.5 text-sm outline-none ring-blue-500 focus:ring-2"
                     onChange={(event) => setNoteQuery(event.target.value)}
+                    onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                      if (event.key === 'Enter' && matchedNotes.length > 0) {
+                        event.preventDefault()
+                        selectedNoteRef.current = matchedNotes[0]
+                        selectOptionAndCleanUp(connectNoteOption)
+                      }
+                    }}
                     placeholder="搜索笔记标题或路径"
                     value={noteQuery}
                   />
@@ -241,7 +252,7 @@ export function ComponentPickerPlugin() {
                           key={note.id}
                           onClick={() => {
                             selectedNoteRef.current = note
-                            selectOptionAndCleanUp(options.find((option) => option.command === 'connect-note') as SlashOption)
+                            selectOptionAndCleanUp(connectNoteOption)
                           }}
                           type="button"
                         >
