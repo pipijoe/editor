@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { LexicalTypeaheadMenuPlugin, MenuOption, useBasicTypeaheadTriggerMatch } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
@@ -72,6 +72,17 @@ export function ComponentPickerPlugin() {
   const [openedPanelCommand, setOpenedPanelCommand] = useState<SlashCommand | null>(null)
   const [noteQuery, setNoteQuery] = useState('')
   const selectedNoteRef = useRef<NoteLinkData | null>(null)
+
+  useEffect(() => {
+    if (queryString !== null) {
+      return
+    }
+
+    setHoveredCommand(null)
+    setOpenedPanelCommand(null)
+    setNoteQuery('')
+    selectedNoteRef.current = null
+  }, [queryString])
 
   const checkForSlashMatch = useBasicTypeaheadTriggerMatch('/', { minLength: 0 })
 
@@ -191,6 +202,9 @@ export function ComponentPickerPlugin() {
                     onMouseEnter={() => {
                       setHighlightedIndex(index)
                       setHoveredCommand(option.command === 'connect-note' ? null : option.command)
+                      if (option.command !== 'connect-note') {
+                        setOpenedPanelCommand(null)
+                      }
                     }}
                     onMouseLeave={() => setHoveredCommand((prev) => (prev === option.command ? null : prev))}
                     type="button"
