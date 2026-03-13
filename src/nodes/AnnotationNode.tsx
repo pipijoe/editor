@@ -134,6 +134,10 @@ function AnnotationComponent({
       node.insertAfter(paragraphNode)
       paragraphNode.selectStart()
     })
+
+    window.requestAnimationFrame(() => {
+      editor.focus()
+    })
   }
 
   const removeAnnotation = () => {
