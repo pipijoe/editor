@@ -1,4 +1,4 @@
-import { useMemo, type JSX } from 'react'
+import { useMemo, useRef, type JSX } from 'react'
 import {
   $getNodeByKey,
   DecoratorNode,
@@ -33,6 +33,27 @@ function AnnotationComponent({
   nodeKey: NodeKey
 }) {
   const normalizedEmoji = useMemo(() => (EMOJI_OPTIONS.includes(emoji) ? emoji : '💡'), [emoji])
+  const contentRef = useRef<HTMLSpanElement>(null)
+
+  const focusContent = () => {
+    const element = contentRef.current
+    if (!element) {
+      return
+    }
+
+    element.focus()
+
+    const selection = window.getSelection()
+    if (!selection) {
+      return
+    }
+
+    const range = document.createRange()
+    range.selectNodeContents(element)
+    range.collapse(false)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
 
   const cycleEmoji = () => {
     const currentIndex = EMOJI_OPTIONS.indexOf(normalizedEmoji)
@@ -56,7 +77,15 @@ function AnnotationComponent({
   }
 
   return (
-    <span className="my-2 block rounded-xl bg-slate-100 px-4 py-3 text-slate-800">
+    <span
+      className="my-2 block rounded-[2px] border-[0.5px] border-slate-200 bg-slate-100 px-4 py-3 text-slate-800"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          event.preventDefault()
+          focusContent()
+        }
+      }}
+    >
       <button
         aria-label="切换标注 emoji"
         className="mr-2 inline-flex h-7 w-7 items-center justify-center rounded-md text-lg transition hover:bg-slate-200"
@@ -71,6 +100,8 @@ function AnnotationComponent({
         contentEditable
         onBlur={(event) => updateContent(event.currentTarget.textContent ?? '')}
         onInput={(event) => updateContent(event.currentTarget.textContent ?? '')}
+        onMouseDown={(event) => event.stopPropagation()}
+        ref={contentRef}
         suppressContentEditableWarning
       >
         {content}
