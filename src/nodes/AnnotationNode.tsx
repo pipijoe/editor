@@ -116,9 +116,19 @@ function AnnotationComponent({
         {normalizedEmoji}
       </button>
       <span
-        className="inline-block min-w-[120px] align-middle outline-none"
+        className="inline-block min-w-[120px] whitespace-pre-wrap align-middle outline-none"
         contentEditable
         onBlur={(event) => updateContent(event.currentTarget.textContent ?? '')}
+        onKeyDown={(event) => {
+          event.stopPropagation()
+
+          if (event.key !== 'Enter') {
+            return
+          }
+
+          event.preventDefault()
+          document.execCommand('insertLineBreak')
+        }}
         onMouseDown={(event) => event.stopPropagation()}
         ref={contentRef}
         suppressContentEditableWarning
