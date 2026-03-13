@@ -164,7 +164,7 @@ export function ComponentPickerPlugin() {
 
           return createPortal(
             <div className="z-30 mt-1 flex max-w-[92vw] items-start gap-2">
-              <div className="w-[300px] max-w-[92vw] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+              <div className="w-[600px] max-w-[92vw] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
                 {filteredOptions.map((option, index) => (
                   <button
                     className={`flex w-full flex-col items-start rounded px-3 py-2 text-left ${index === selectedIndex ? 'bg-slate-100' : ''}`}
@@ -201,7 +201,7 @@ export function ComponentPickerPlugin() {
               )}
 
               {hoveredCommand === 'connect-note' && (
-                <div className="w-[320px] max-w-[72vw] rounded-md border border-slate-200 bg-white p-3 shadow-lg">
+                <div className="w-[640px] max-w-[72vw] rounded-md border border-slate-200 bg-white p-3 shadow-lg">
                   <p className="mb-2 text-xs font-medium text-slate-500">连接到笔记</p>
                   <input
                     className="mb-2 w-full rounded-md border border-slate-200 px-2 py-1.5 text-sm outline-none ring-blue-500 focus:ring-2"
