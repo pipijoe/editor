@@ -1,4 +1,4 @@
-import { type MouseEvent, type PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type MouseEvent as ReactMouseEvent, type PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
@@ -11,7 +11,9 @@ import {
   $createParagraphNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   $setSelection,
   FORMAT_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -198,7 +200,7 @@ function FloatingSelectionToolbarPlugin() {
   const [linkError, setLinkError] = useState('')
   const selectionRef = useRef<RangeSelection | null>(null)
 
-  const preventMouseDownBlur = (event: MouseEvent) => {
+  const preventMouseDownBlur = (event: ReactMouseEvent) => {
     event.preventDefault()
   }
 
@@ -489,6 +491,67 @@ function BlockPlaceholderPlugin() {
   return null
 }
 
+function FocusTailTextOnClickPlugin() {
+  const [editor] = useLexicalComposerContext()
+
+  useEffect(() => {
+    return editor.registerRootListener((rootElement, previousRootElement) => {
+      previousRootElement?.removeEventListener('mousedown', handleMouseDown)
+      rootElement?.addEventListener('mousedown', handleMouseDown)
+    })
+
+    function handleMouseDown(event: MouseEvent) {
+      const rootElement = editor.getRootElement()
+      if (!rootElement || event.button !== 0 || event.target !== rootElement) {
+        return
+      }
+
+      const lastElement = rootElement.lastElementChild
+      if (lastElement) {
+        const lastRect = lastElement.getBoundingClientRect()
+        if (event.clientY < lastRect.bottom - 1) {
+          return
+        }
+      }
+
+      editor.update(() => {
+        const root = $getRoot()
+        const lastTextNode = getLastTextNode(root)
+
+        if (lastTextNode) {
+          lastTextNode.selectEnd()
+          return
+        }
+
+        const paragraphNode = $createParagraphNode()
+        root.append(paragraphNode)
+        paragraphNode.selectEnd()
+      })
+    }
+  }, [editor])
+
+  return null
+}
+
+function getLastTextNode(node: ReturnType<typeof $getRoot>) {
+  let current = node.getLastChild()
+
+  while (current) {
+    if ($isTextNode(current)) {
+      return current
+    }
+
+    if ($isElementNode(current)) {
+      current = current.getLastChild()
+      continue
+    }
+
+    return null
+  }
+
+  return null
+}
+
 export default function App() {
   const [content, setContent] = useState('')
   const editorContentClasses = useMemo(
@@ -512,6 +575,7 @@ export default function App() {
         <LexicalComposer initialConfig={initialConfig}>
           <FloatingSelectionToolbarPlugin />
           <BlockPlaceholderPlugin />
+          <FocusTailTextOnClickPlugin />
           <RichTextPlugin
             contentEditable={<ContentEditable className={editorContentClasses} />}
             placeholder={<p className="pointer-events-none -mt-9 px-3 text-slate-400">输入 / 启用命令</p>}
