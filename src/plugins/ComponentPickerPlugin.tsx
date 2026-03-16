@@ -39,7 +39,46 @@ const MOCK_NOTES: Array<NoteLinkData> = [
     updatedAt: '2026-03-10T15:10:00+08:00',
     url: '/notes/meeting-notes-ai',
   },
+  {
+    id: 'editor-linking-spec',
+    title: '编辑器「连接到笔记」功能说明',
+    path: '/产品需求/编辑器',
+    updatedAt: '2026-03-10T09:12:00+08:00',
+    url: '/notes/editor-linking-spec',
+  },
+  {
+    id: 'knowledge-base-writing-guide',
+    title: '知识库写作规范',
+    path: '/知识库/规范',
+    updatedAt: '2026-03-02T20:18:00+08:00',
+    url: '/notes/knowledge-base-writing-guide',
+  },
 ]
+
+function fuzzyMatch(value: string, query: string): boolean {
+  if (!query) {
+    return true
+  }
+
+  const normalizedValue = value.toLowerCase()
+  const normalizedQuery = query.toLowerCase().replace(/\s+/g, '')
+
+  if (normalizedValue.includes(normalizedQuery)) {
+    return true
+  }
+
+  let queryIndex = 0
+  for (let valueIndex = 0; valueIndex < normalizedValue.length; valueIndex += 1) {
+    if (normalizedValue[valueIndex] === normalizedQuery[queryIndex]) {
+      queryIndex += 1
+      if (queryIndex === normalizedQuery.length) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
 
 function formatUpdatedAt(updatedAt: string): string {
   return new Intl.DateTimeFormat('zh-CN', {
@@ -89,7 +128,7 @@ export function ComponentPickerPlugin() {
   const options = useMemo(
     () => [
       new SlashOption('公式', '插入可编辑公式块（支持 /math）', ['equation', 'math', 'latex', '公式'], 'math'),
-      new SlashOption('标注', '插入可编辑标注块（支持 /annotation）', ['annotation', 'highlight', 'mark', 'note', '标注', '高亮'], 'annotation'),
+      new SlashOption('标注', '插入可编辑标注块（支持 /annotation）', ['annotation', 'highlight', 'mark', '标注', '高亮'], 'annotation'),
       new SlashOption('连接到笔记', '搜索笔记并插入可双击跳转的笔记卡片（支持 /note）', ['note', 'link', '连接', '笔记', '关联'], 'connect-note'),
     ],
     [],
@@ -102,11 +141,7 @@ export function ComponentPickerPlugin() {
     return MOCK_NOTES.slice()
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
       .filter((note) => {
-        if (!normalizedQuery) {
-          return true
-        }
-
-        return [note.title, note.path].some((value) => value.toLowerCase().includes(normalizedQuery))
+        return [note.title, note.path].some((value) => fuzzyMatch(value, normalizedQuery))
       })
   }, [noteQuery])
 
