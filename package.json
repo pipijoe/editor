@@ -10,29 +10,29 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/react": "^0.20.0",
-    "@radix-ui/react-slot": "^1.1.0",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.1",
-    "lexical": "^0.20.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.5.2"
+    "@lexical/extension": "0.43.0",
+    "@lexical/history": "0.43.0",
+    "@lexical/react": "0.43.0",
+    "@lexical/rich-text": "0.43.0",
+    "@lexical/table": "0.43.0",
+    "@lexical/tailwind": "0.43.0",
+    "@lexical/utils": "0.43.0",
+    "lexical": "0.43.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.3.5",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^9.9.0",
-    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
-    "eslint-plugin-react-refresh": "^0.4.11",
-    "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.13",
-    "typescript": "^5.5.3",
-    "typescript-eslint": "^8.3.0",
-    "vite": "^5.4.1",
-    "@eslint/js": "^9.9.0",
-    "globals": "^15.9.0"
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
+    "cross-env": "^7.0.3",
+    "typescript": "^5.9.2",
+    "vite": "^7.3.2"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.52.0",
+    "@rollup/rollup-darwin-arm64": "4.52.0",
+    "@rollup/rollup-win32-x64-msvc": "4.52.0",
+    "@rollup/wasm-node": "4.52.0"
   }
 }

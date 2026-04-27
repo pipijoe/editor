@@ -1,10 +1,15 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App'
-import './index.css'
+import "./styles.css";
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+import React from "react";
+import ReactDOM from "react-dom/client";
+
+import App from "./App.tsx";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <div className="App">
+      <h1>Table Extension Lexical Example</h1>
+      <App />
+    </div>
   </React.StrictMode>,
-)
+);
